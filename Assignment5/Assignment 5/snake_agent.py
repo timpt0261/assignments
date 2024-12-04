@@ -59,12 +59,66 @@ class SnakeAgent:
     #   This can return a list of variables that help you keep track of
     #   conditions mentioned above.
     def helper_func(self, state):
-        print("IN helper_func")
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
+        print("In helper_func")
+        
+        idx = [0] * 9
+        snake_head_x, snake_head_y = state[0], state[1]
+        snake_body_x = [body[0] for body in state[2]]
+        snake_body_y = [body[1] for body in state[2]]
+        food_x, food_y = state[3], state[4]
+        
+        ADJ_WALL_X = 0
+        ADJ_WALL_Y = 1
+        FOOD_DIR_X = 2
+        FOOD_DIR_X = 3
+        ADJ_BODY_TOP = 4
+        ADJ_BODY_BOTTOM = 5
+        ADJ_BODY_LEFT = 6
+        ADJ_BODY_RIGHT = 7
+        
+        # Adjoining_Wall_X
+        if snake_head_x - helper.WALL_SIZE == 0 : #check the left
+            idx[ADJ_WALL_X] = 0
+        elif snake_head_x + 2 *(helper.WALL_SIZE) ==helper.DISPLAY_SIZE: #check the right
+            idx[ADJ_WALL_X] = 1
+        else: # head_x is neither 
+            idx[ADJ_WALL_X] = 2
+            
+        #Adjoining_Wall_Y
+        if snake_head_y - helper.WALL_SIZE == 0 : #check up
+            idx[ADJ_WALL_Y] = 0
+        elif snake_head_y + 2 *(helper.WALL_SIZE) == helper.DISPLAY_SIZE: #check down
+            idx[ADJ_WALL_Y] = 1
+        else: # head_y is neither
+            idx[ADJ_WALL_Y] = 2
+
+        #FOOD_DIR_X
+        if snake_head_x == food_x:
+            idx[FOOD_DIR_X] = 0
+        elif snake_head_x < food_x:
+            idx[FOOD_DIR_X] = 1
+        else:
+            idx[FOOD_DIR_X] = 2
+        
+        #FOOD_DIR_Y
+        if snake_head_y == food_y:
+            idx[FOOD_DIR_X] = 0
+        elif snake_head_y < food_y:
+            idx[FOOD_DIR_X] = 1
+        else:
+            idx[FOOD_DIR_X] = 2
+        # adj body top,bottom, left, right
+        idx[ADJ_BODY_TOP] = True if snake_head_x-40 in snake_body_x else False
+        idx[ADJ_BODY_BOTTOM] = True if snake_head_x+40 in snake_body_x else False
+        idx[ADJ_BODY_LEFT] = True if snake_head_y-40 in snake_body_y else False
+        idx[ADJ_BODY_RIGHT] = True if snake_head_y+40 in snake_body_y else False
+        
+        # action
+        
+        
+        return idx
+        
+        
 
 
     # Computing the reward, need not be changed.
@@ -98,13 +152,7 @@ class SnakeAgent:
     #   states as mentioned in helper_func, use the state variable to contain all that.
     def agent_action(self, state, points, dead):
         print("IN AGENT_ACTION")
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
-        # YOUR CODE HERE
+        self.helper_func(state=state)
 
         #UNCOMMENT THIS TO RETURN THE REQUIRED ACTION.
         #return action
