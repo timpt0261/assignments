@@ -22,6 +22,9 @@ class SnakeAgent:
         self.LPC = LPC
         self.gamma = gamma
         self.reset()
+        
+        self.s = None
+        self.a = None
 
         # Create the Q and N Table to work with
         self.Q = helper.initialize_q_as_zeros()
@@ -61,7 +64,7 @@ class SnakeAgent:
     def helper_func(self, state):
         print("In helper_func")
         
-        idx = [0] * 9
+        idx = [0] * 8
         snake_head_x, snake_head_y = state[0], state[1]
         snake_body_x = [body[0] for body in state[2]]
         snake_body_y = [body[1] for body in state[2]]
@@ -111,11 +114,7 @@ class SnakeAgent:
         idx[ADJ_BODY_TOP] = True if snake_head_x-40 in snake_body_x else False
         idx[ADJ_BODY_BOTTOM] = True if snake_head_x+40 in snake_body_x else False
         idx[ADJ_BODY_LEFT] = True if snake_head_y-40 in snake_body_y else False
-        idx[ADJ_BODY_RIGHT] = True if snake_head_y+40 in snake_body_y else False
-        
-        # action
-        
-        
+        idx[ADJ_BODY_RIGHT] = True if snake_head_y+40 in snake_body_y else False   
         return idx
         
         
@@ -152,7 +151,27 @@ class SnakeAgent:
     #   states as mentioned in helper_func, use the state variable to contain all that.
     def agent_action(self, state, points, dead):
         print("IN AGENT_ACTION")
-        self.helper_func(state=state)
-
-        #UNCOMMENT THIS TO RETURN THE REQUIRED ACTION.
-        #return action
+        q_state = self.helper_func(state)
+        action  = None
+        learning_rate = 0.7
+        epsilon = 0.4
+        
+        if self._train:
+            if random.uniform(0,1) < epsilon:
+                action = random.choice(self.actions)
+            else:
+                action = np.argmax(self.Q[q_state])
+        else:
+            action = np.argmax(self.Q[q_state])
+    
+        # update Q_table            
+        if self._test and self.s is not None and self.a is not None:
+            reward = self.compute_reward(points=points, dead=dead)
+            max_next_state = max(self.Q[q_state])
+            self.Q[q_state][action] +=  learning_rate * (reward + self.gamma * max_next_state - self.Q[self.s][self.a]) 
+            helper.save(self.Q)
+        
+        # save last action
+        self.s = q_state
+        self.a = action
+        return action 
