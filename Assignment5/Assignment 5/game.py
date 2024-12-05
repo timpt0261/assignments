@@ -49,20 +49,27 @@ class SnakeGame:
         #   Use self.env.reset() to reset your game after each iteration.
         for game in range(1, self.args.NUM_TRAIN_ITER + 1):
                 print("TRAINING NUMBER : " + str(game))
-            # YOUR CODE HERE
-            # YOUR CODE HERE
-            # YOUR CODE HERE
-            # YOUR CODE HERE
-            # YOUR CODE HERE
-
-            #UNCOMMENT THE CODE BELOW TO PRINT STATISTICS
-            #if game % self.args.NUM_TO_STAT == 0:
-            #    print(
-            #        "Played games:", len(self.points_results) - NUM_TO_STAT, "-", len(self.points_results), 
-            #        "Calculated points (Average:", sum(self.points_results[-NUM_TO_STAT:])/NUM_TO_STAT,
-            #        "Max points so far:", max(self.points_results[-NUM_TO_STAT:]),
-            #        "Min points so far:", min(self.points_results[-NUM_TO_STAT:]),")",
-            #    )
+                state = self.env.get_state()
+                dead = False
+                action = self.agent.agent_action(state, 0, dead)
+                count = 0
+                while not dead:
+                    count+=1
+                    state, points, dead = self.env.step(action)
+                    action = self.agent.agent_action(state=state, points=points, dead=dead)
+                self.env.reset()
+                self.points_results.append(points)
+                if len(self.points_results) == 0:
+                    return
+                print("Average Points:", sum(points_results)/len(points_results))
+    
+        if game % self.args.NUM_TO_STAT == 0:
+            print(
+                "Played games:", len(self.points_results) - NUM_TO_STAT, "-", len(self.points_results), 
+                "Calculated points (Average:", sum(self.points_results[-NUM_TO_STAT:])/NUM_TO_STAT,
+                "Max points so far:", max(self.points_results[-NUM_TO_STAT:]),
+                "Min points so far:", min(self.points_results[-NUM_TO_STAT:]),")",
+            )
             # YOUR CODE HERE
         print("Training takes", time.time() - start, "seconds")
         #   THIS LINE WILL SAVE THE MODEL TO THE FILE "model.npy"
@@ -84,19 +91,27 @@ class SnakeGame:
         #   Use self.env.reset() to reset your state everytime a new game begins.
         for game in range(1, self.args.NUM_TEST_ITER + 1):
             print("TESTING NUMBER: " + str(game))
-                
-            # YOUR CODE HERE
-            # YOUR CODE HERE
-            # YOUR CODE HERE
-            # YOUR CODE HERE
-            # YOUR CODE HERE
+            state = self.env.get_state()
+            dead = False
+            action = self.agent.agent_action(state, 0, dead)
+            count = 0
+            while not dead:
+                count+=1
+                state, points, dead = self.env.step(action)
+                action = self.agent.agent_action(state=state, points=points, dead=dead)
+            self.env.reset()
+            self.points_results.append(points)
+            if len(self.points_results) == 0:
+                return
+            print("Average Points:", sum(points_results)/len(points_results))
+
 
         #UNCOMMENT THE CODE BELOW TO PRINT STATISTICS
-        #print("Testing takes", time.time() - start, "seconds")
-        #print("Number of Games:", len(points_results))
-        #print("Average Points:", sum(points_results)/len(points_results))
-        #print("Max Points:", max(points_results))
-        #print("Min Points:", min(points_results))
+        print("Testing takes", time.time() - start, "seconds")
+        print("Number of Games:", len(points_results))
+        print("Average Points:", sum(points_results)/len(points_results))
+        print("Max Points:", max(points_results))
+        print("Min Points:", min(points_results))
 
 
     #   This function is the one where the game will be displayed.

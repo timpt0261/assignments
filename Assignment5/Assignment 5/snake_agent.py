@@ -22,7 +22,8 @@ class SnakeAgent:
         self.LPC = LPC
         self.gamma = gamma
         self.reset()
-        
+
+        self.epsilon = 1.0        
         self.s = None
         self.a = None
 
@@ -153,23 +154,20 @@ class SnakeAgent:
         print("IN AGENT_ACTION")
         q_state = self.helper_func(state)
         action  = None
-        learning_rate = 0.7
-        epsilon = 0.4
-        
+        reward = self.compute_reward(points=points, dead=dead)
+                
         if self._train:
-            if random.uniform(0,1) < epsilon:
-                action = random.choice(self.actions)
-            else:
-                action = np.argmax(self.Q[q_state])
+            self.N[q_state][self.a] += 1
+            learning_rate = 0.7
+            temp = self.Q[q_state]
+            max_next_state = np.amax(temp)
+            # changee to slide example
+            self.Q[q_state][action] +=  learning_rate * (reward + self.gamma * max_next_state - self.Q[q_state][self.a]) 
+            exploration_bonus = self.Ne / (1 + self.N[q_state])
+            adjusted_q_val = self.Q[q_state] + exploration_bonus
+            action = np.argmax(adjusted_q_val)
         else:
-            action = np.argmax(self.Q[q_state])
-    
-        # update Q_table            
-        if self._test and self.s is not None and self.a is not None:
-            reward = self.compute_reward(points=points, dead=dead)
-            max_next_state = max(self.Q[q_state])
-            self.Q[q_state][action] +=  learning_rate * (reward + self.gamma * max_next_state - self.Q[self.s][self.a]) 
-            helper.save(self.Q)
+            action = np.argmax(self.Q[q_state]) # explotation
         
         # save last action
         self.s = q_state
