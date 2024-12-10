@@ -22,8 +22,7 @@ class SnakeAgent:
         self.LPC = LPC
         self.gamma = gamma
         self.reset()
-
-        self.epsilon = 1.0        
+ 
         self.s = None
         self.a = None
 
@@ -63,7 +62,7 @@ class SnakeAgent:
     #   This can return a list of variables that help you keep track of
     #   conditions mentioned above.
     def helper_func(self, state):
-        print("In helper_func")
+        # print("In helper_func")
         
         idx = [0] * 8
         snake_head_x, snake_head_y = state[0], state[1]
@@ -81,20 +80,21 @@ class SnakeAgent:
         ADJ_BODY_RIGHT = 7
         
         # Adjoining_Wall_X
-        if snake_head_x - helper.WALL_SIZE == 0 : #check the left
+        if snake_head_x == helper.WALL_SIZE:  # Near left wall
             idx[ADJ_WALL_X] = 0
-        elif snake_head_x + 2 *(helper.WALL_SIZE) ==helper.DISPLAY_SIZE: #check the right
+        elif snake_head_x == helper.DISPLAY_SIZE - (2 * helper.WALL_SIZE):  # Near right wall
             idx[ADJ_WALL_X] = 1
-        else: # head_x is neither 
+        else:  # Neither
             idx[ADJ_WALL_X] = 2
-            
-        #Adjoining_Wall_Y
-        if snake_head_y - helper.WALL_SIZE == 0 : #check up
+
+        # Adjoining_Wall_Y
+        if snake_head_y == helper.WALL_SIZE:  # Near top wall
             idx[ADJ_WALL_Y] = 0
-        elif snake_head_y + 2 *(helper.WALL_SIZE) == helper.DISPLAY_SIZE: #check down
+        elif snake_head_y == helper.DISPLAY_SIZE - (2 * helper.WALL_SIZE):  # Near bottom wall
             idx[ADJ_WALL_Y] = 1
-        else: # head_y is neither
+        else:  # Neither
             idx[ADJ_WALL_Y] = 2
+
 
         #FOOD_DIR_X
         if snake_head_x == food_x:
@@ -151,25 +151,32 @@ class SnakeAgent:
     #   The parameters defined should be enough. If you want to describe more elaborate
     #   states as mentioned in helper_func, use the state variable to contain all that.
     def agent_action(self, state, points, dead):
-        print("IN AGENT_ACTION")
-        q_state = self.helper_func(state)
+        # print("IN AGENT_ACTION")
+        s_prime = self.helper_func(state)
         action  = None
+        learning_rate = 0.7
         reward = self.compute_reward(points=points, dead=dead)
-                
-        if self._train:
-            self.N[q_state][self.a] += 1
-            learning_rate = 0.7
-            temp = self.Q[q_state]
-            max_next_state = np.amax(temp)
-            # changee to slide example
-            self.Q[q_state][action] +=  learning_rate * (reward + self.gamma * max_next_state - self.Q[q_state][self.a]) 
-            exploration_bonus = self.Ne / (1 + self.N[q_state])
-            adjusted_q_val = self.Q[q_state] + exploration_bonus
-            action = np.argmax(adjusted_q_val)
-        else:
-            action = np.argmax(self.Q[q_state]) # explotation
         
+        def utility(state_indices):
+            n_values = self.N[state_indices]
+            q_values = self.Q[state_indices]
+            if np.any(n_values < self.Ne):
+                return random.choice(self.actions)
+            else:
+                ucb_values = [
+                    q_values[a] + np.sqrt(2 * np.log(np.sum(n_values) + 1) / (n_values[a] + 1))
+                    for a in self.actions
+                ]
+                return np.argmax(ucb_values)
+
+
+        if self._train and self.a is not None and self.a is not None:
+            self.N[self.s][self.a] += 1    
+            max_next_state = np.max(self.Q[s_prime])
+            sample = reward + self.gamma * max_next_state - self.Q[self.s][self.a]
+            self.Q[self.s][self.a] += learning_rate * self.N[self.s][self.a] * sample
         # save last action
-        self.s = q_state
+        action = utility(s_prime)
+        self.s = s_prime
         self.a = action
         return action 

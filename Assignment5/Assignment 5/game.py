@@ -29,7 +29,7 @@ class SnakeGame:
     #       then the do_testint() then show_games()
     def play(self):
         if self.args.NUM_TRAIN_ITER != 0:
-            self.do_training()
+             self.do_training()
         self.do_testing()
         self.show_games()
 
@@ -48,7 +48,7 @@ class SnakeGame:
         #   AS TRAINING IS HAPPENING THE CODE IN THE LOOP WILL PRINT STATISTICS.
         #   Use self.env.reset() to reset your game after each iteration.
         for game in range(1, self.args.NUM_TRAIN_ITER + 1):
-                print("TRAINING NUMBER : " + str(game))
+                # print("TRAINING NUMBER : " + str(game))
                 state = self.env.get_state()
                 dead = False
                 action = self.agent.agent_action(state, 0, dead)
@@ -57,11 +57,10 @@ class SnakeGame:
                     count+=1
                     state, points, dead = self.env.step(action)
                     action = self.agent.agent_action(state=state, points=points, dead=dead)
-                self.env.reset()
+                    self.env.step(action=action)
                 self.points_results.append(points)
-                if len(self.points_results) == 0:
-                    return
-                print("Average Points:", sum(points_results)/len(points_results))
+                self.env.reset()
+                
     
         if game % self.args.NUM_TO_STAT == 0:
             print(
@@ -70,8 +69,8 @@ class SnakeGame:
                 "Max points so far:", max(self.points_results[-NUM_TO_STAT:]),
                 "Min points so far:", min(self.points_results[-NUM_TO_STAT:]),")",
             )
-            # YOUR CODE HERE
-        print("Training takes", time.time() - start, "seconds")
+            
+        # print("Training takes", time.time() - start, "seconds")
         #   THIS LINE WILL SAVE THE MODEL TO THE FILE "model.npy"
         self.agent.save_model()
 
@@ -99,12 +98,10 @@ class SnakeGame:
                 count+=1
                 state, points, dead = self.env.step(action)
                 action = self.agent.agent_action(state=state, points=points, dead=dead)
+                self.env.step(action=action)
+            points_results.append(points)
             self.env.reset()
-            self.points_results.append(points)
-            if len(self.points_results) == 0:
-                return
-            print("Average Points:", sum(points_results)/len(points_results))
-
+            
 
         #UNCOMMENT THE CODE BELOW TO PRINT STATISTICS
         print("Testing takes", time.time() - start, "seconds")
