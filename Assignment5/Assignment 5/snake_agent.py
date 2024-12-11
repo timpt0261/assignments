@@ -25,6 +25,7 @@ class SnakeAgent:
  
         self.s = None
         self.a = None
+        self.epsilon = 0.1
 
         # Create the Q and N Table to work with
         self.Q = helper.initialize_q_as_zeros()
@@ -73,28 +74,27 @@ class SnakeAgent:
         ADJ_WALL_X = 0
         ADJ_WALL_Y = 1
         FOOD_DIR_X = 2
-        FOOD_DIR_X = 3
+        FOOD_DIR_Y = 3
         ADJ_BODY_TOP = 4
         ADJ_BODY_BOTTOM = 5
         ADJ_BODY_LEFT = 6
         ADJ_BODY_RIGHT = 7
         
         # Adjoining_Wall_X
-        if snake_head_x == helper.WALL_SIZE:  # Near left wall
+        if snake_head_x == helper.BOARD_LIMIT_MIN:  # Near left wall
             idx[ADJ_WALL_X] = 0
-        elif snake_head_x == helper.DISPLAY_SIZE - (2 * helper.WALL_SIZE):  # Near right wall
+        elif snake_head_x + (2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near right wall
             idx[ADJ_WALL_X] = 1
         else:  # Neither
             idx[ADJ_WALL_X] = 2
 
         # Adjoining_Wall_Y
-        if snake_head_y == helper.WALL_SIZE:  # Near top wall
+        if snake_head_y == helper.BOARD_LIMIT_MIN:  # Near top wall
             idx[ADJ_WALL_Y] = 0
-        elif snake_head_y == helper.DISPLAY_SIZE - (2 * helper.WALL_SIZE):  # Near bottom wall
+        elif snake_head_y+(2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near bottom wall
             idx[ADJ_WALL_Y] = 1
         else:  # Neither
             idx[ADJ_WALL_Y] = 2
-
 
         #FOOD_DIR_X
         if snake_head_x == food_x:
@@ -106,11 +106,11 @@ class SnakeAgent:
         
         #FOOD_DIR_Y
         if snake_head_y == food_y:
-            idx[FOOD_DIR_X] = 0
+            idx[FOOD_DIR_Y] = 0
         elif snake_head_y < food_y:
-            idx[FOOD_DIR_X] = 1
+            idx[FOOD_DIR_Y] = 1
         else:
-            idx[FOOD_DIR_X] = 2
+            idx[FOOD_DIR_Y] = 2
         # adj body top,bottom, left, right
         idx[ADJ_BODY_TOP] = True if snake_head_x-40 in snake_body_x else False
         idx[ADJ_BODY_BOTTOM] = True if snake_head_x+40 in snake_body_x else False
@@ -157,26 +157,17 @@ class SnakeAgent:
         learning_rate = 0.7
         reward = self.compute_reward(points=points, dead=dead)
         
-        def utility(state_indices):
-            n_values = self.N[state_indices]
-            q_values = self.Q[state_indices]
-            if np.any(n_values < self.Ne):
-                return random.choice(self.actions)
-            else:
-                ucb_values = [
-                    q_values[a] + np.sqrt(2 * np.log(np.sum(n_values) + 1) / (n_values[a] + 1))
-                    for a in self.actions
-                ]
-                return np.argmax(ucb_values)
+        if random.uniform(0,1) < self.epsilon:
+            action=random.choice(self.actions)
+        else:
+            action=np.argmax(self.Q[s_prime])
 
-
-        if self._train and self.a is not None and self.a is not None:
+        if self._train:
             self.N[self.s][self.a] += 1    
             max_next_state = np.max(self.Q[s_prime])
             sample = reward + self.gamma * max_next_state - self.Q[self.s][self.a]
-            self.Q[self.s][self.a] += learning_rate * self.N[self.s][self.a] * sample
+            self.Q[self.s][self.a] += learning_rate * sample
         # save last action
-        action = utility(s_prime)
         self.s = s_prime
         self.a = action
         return action 
