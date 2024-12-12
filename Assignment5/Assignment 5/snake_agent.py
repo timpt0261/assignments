@@ -26,7 +26,7 @@ class SnakeAgent:
         self.s = None
         self.a = None
         self.points = 0
-        self.epsilon = .5
+        self.epsilon = .2
 
         # Create the Q and N Table to work with
         self.Q = helper.initialize_q_as_zeros()
@@ -82,7 +82,7 @@ class SnakeAgent:
         ADJ_BODY_RIGHT = 7
         
         # Adjoining_Wall_X
-        if snake_head_x == helper.BOARD_LIMIT_MIN:  # Near left wall
+        if snake_head_x-helper.GRID_SIZE == helper.BOARD_LIMIT_MIN:  # Near left wall
             idx[ADJ_WALL_X] = 0
         elif snake_head_x + (2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near right wall
             idx[ADJ_WALL_X] = 2
@@ -90,7 +90,7 @@ class SnakeAgent:
             idx[ADJ_WALL_X] = 1
 
         # Adjoining_Wall_Y
-        if snake_head_y == helper.BOARD_LIMIT_MIN:  # Near top wall
+        if snake_head_y-helper.GRID_SIZE == helper.BOARD_LIMIT_MIN:  # Near top wall
             idx[ADJ_WALL_Y] = 0
         elif snake_head_y+(2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near bottom wall
             idx[ADJ_WALL_Y] = 2
@@ -154,28 +154,10 @@ class SnakeAgent:
     def agent_action(self, state, points, dead):
         # print("IN AGENT_ACTION")
         s_prime = self.helper_func(state) # s'
-        action = None
-        learning_rate = 1
+        action = self.utility(s_prime)
+        learning_rate = .7
         reward = self.compute_reward(points=points, dead=dead)
         
-
-        def utility(state_indices):
-            n_values = self.N[state_indices]
-            q_values = self.Q[state_indices]
-            if random.uniform(0,1) < self.epsilon:
-                return random.choice(self.actions)
-            else:
-                ucb_values = [
-                    q_values[a] + np.sqrt(2 * np.log(np.sum(n_values) + 1) / (n_values[a] + 1))
-                    for a in self.actions
-                ]
-                return np.argmax(ucb_values)
-        # # maxamize based on reward
-        # if random.uniform(0,1) < self.epsilon:
-        #     action = random.choice(self.actions)
-        # else:
-        #     action = np.argmax(self.Q[s_prime])
-
         # Update Q-table
         if self._train and self.s is not None:
             self.N[self.s][self.a] += 1
@@ -184,9 +166,76 @@ class SnakeAgent:
             # Q(s,a) = (1- alpha)*Q(s,a) + alpha * sample
             self.Q[self.s][self.a] =  (1 - learning_rate) * self.Q[self.s][self.a] + learning_rate * sample
 
-            
-        action = utility(s_prime)
+        if self._train:
+            self.epsilon = max(0.01, self.epsilon * .99)            
         # save last action
         self.s = s_prime
         self.a = action
-        return action 
+        return action
+
+    
+    def utility(self,state_indices=tuple()):
+            # discourage actions that head into wall, body
+            
+            ADJ_WALL_X = 0
+            ADJ_WALL_Y = 1
+            FOOD_DIR_X = 2
+            FOOD_DIR_Y = 3
+            ADJ_BODY_TOP = 4
+            ADJ_BODY_BOTTOM = 5
+            ADJ_BODY_LEFT = 6
+            ADJ_BODY_RIGHT = 7
+
+            # high priorty x,y not close to apple
+            # up ,down, left, right
+            action_score = [0] * 4
+            # Utility for Walls 
+            if state_indices[0] == 0:
+                action_score[2] -= 1000
+            elif state_indices[0] == 1: #Neither
+                action_score[2] += 1
+                action_score[3] += 1
+            else:
+                action_score[3] -= 1000 # near right
+            # near top
+            if state_indices[1] == 0:
+                action_score[0] -= 1000
+            elif state_indices[1] == 1:
+                action_score[0] += 1
+                action_score[1] += 1
+            else:
+                action_score[1] -= 1000
+
+            # utility for food
+            if state_indices[2] == 0:
+                action_score[2] += 1 
+                action_score[3] += 1
+            elif state_indices[2] == 1:
+                action_score[2] += 5 
+            else:
+                action_score[3] += 5
+                
+
+            if state_indices[3] == 0:
+                action_score[0] += 1
+                action_score[1] += 1
+                
+            elif state_indices[3] == 1:
+                action_score[0] += 5
+            else:
+                action_score[1] += 5
+                
+            # utility for body
+            # adj body top,bottom, left, right
+            action_score[0] += 1 if not state_indices[4] else -1000
+            action_score[1] += 1 if not state_indices[5] else -1000
+            action_score[2] += 1 if not state_indices[6] else -1000
+            action_score[3] += 1 if not state_indices[7] else -1000
+
+
+            if random.uniform(0,1) < self.epsilon:
+                return random.choice(self.actions)
+            else:
+                if max(action_score) > 0:
+                    return int(np.argmax(action_score))
+            return int(np.argmax(self.Q[state_indices]))
