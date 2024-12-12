@@ -167,7 +167,7 @@ class SnakeAgent:
             self.Q[self.s][self.a] =  (1 - learning_rate) * self.Q[self.s][self.a] + learning_rate * sample
 
         if self._train:
-            self.epsilon = max(0.01, self.epsilon * .99)            
+            self.epsilon = max(0.001, self.epsilon * .99)            
         # save last action
         self.s = s_prime
         self.a = action
@@ -236,6 +236,8 @@ class SnakeAgent:
             if random.uniform(0,1) < self.epsilon:
                 return random.choice(self.actions)
             else:
-                if max(action_score) > 0:
-                    return int(np.argmax(action_score))
+                max_a = max(action_score)
+                best_actions = [a for a,score in enumerate(action_score) if score == max_a and max_a > 0]
+                if best_actions:
+                    return random.choice(best_actions)
             return int(np.argmax(self.Q[state_indices]))

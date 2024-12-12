@@ -60,8 +60,6 @@ class SnakeGame:
                 self.points_results.append(points)
                 self.env.reset()
                 
-                
-    
         if game % self.args.NUM_TO_STAT == 0:
             print(
                 "Played games:", len(self.points_results) - NUM_TO_STAT, "-", len(self.points_results), 
