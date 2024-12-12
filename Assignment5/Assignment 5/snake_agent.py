@@ -25,7 +25,8 @@ class SnakeAgent:
  
         self.s = None
         self.a = None
-        self.epsilon = 0.1
+        self.points = 0
+        self.epsilon = .5
 
         # Create the Q and N Table to work with
         self.Q = helper.initialize_q_as_zeros()
@@ -34,11 +35,11 @@ class SnakeAgent:
 
     #   This function sets if the program is in training mode or testing mode.
     def set_train(self):
-        self._train = True
+        self._train = 1
 
      #   This function sets if the program is in training mode or testing mode.       
     def set_eval(self):
-        self._train = False
+        self._train = 0
 
     #   Calls the helper function to save the q-table after training
     def save_model(self):
@@ -84,39 +85,39 @@ class SnakeAgent:
         if snake_head_x == helper.BOARD_LIMIT_MIN:  # Near left wall
             idx[ADJ_WALL_X] = 0
         elif snake_head_x + (2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near right wall
-            idx[ADJ_WALL_X] = 1
-        else:  # Neither
             idx[ADJ_WALL_X] = 2
+        else:  # Neither
+            idx[ADJ_WALL_X] = 1
 
         # Adjoining_Wall_Y
         if snake_head_y == helper.BOARD_LIMIT_MIN:  # Near top wall
             idx[ADJ_WALL_Y] = 0
         elif snake_head_y+(2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near bottom wall
-            idx[ADJ_WALL_Y] = 1
-        else:  # Neither
             idx[ADJ_WALL_Y] = 2
+        else:  # Neither
+            idx[ADJ_WALL_Y] = 1
 
         #FOOD_DIR_X
         if snake_head_x == food_x:
             idx[FOOD_DIR_X] = 0
         elif snake_head_x < food_x:
-            idx[FOOD_DIR_X] = 1
-        else:
             idx[FOOD_DIR_X] = 2
+        else:
+            idx[FOOD_DIR_X] = 1
         
         #FOOD_DIR_Y
         if snake_head_y == food_y:
             idx[FOOD_DIR_Y] = 0
         elif snake_head_y < food_y:
-            idx[FOOD_DIR_Y] = 1
-        else:
             idx[FOOD_DIR_Y] = 2
+        else:
+            idx[FOOD_DIR_Y] = 1
         # adj body top,bottom, left, right
-        idx[ADJ_BODY_TOP] = True if snake_head_x-40 in snake_body_x else False
-        idx[ADJ_BODY_BOTTOM] = True if snake_head_x+40 in snake_body_x else False
-        idx[ADJ_BODY_LEFT] = True if snake_head_y-40 in snake_body_y else False
-        idx[ADJ_BODY_RIGHT] = True if snake_head_y+40 in snake_body_y else False   
-        return idx
+        idx[ADJ_BODY_TOP] = 1 if snake_head_x-40 in snake_body_x else 0
+        idx[ADJ_BODY_BOTTOM] = 1 if snake_head_x+40 in snake_body_x else 0
+        idx[ADJ_BODY_LEFT] = 1 if snake_head_y-40 in snake_body_y else 0
+        idx[ADJ_BODY_RIGHT] = 1 if snake_head_y+40 in snake_body_y else 0   
+        return tuple(idx)
         
         
 
@@ -152,21 +153,39 @@ class SnakeAgent:
     #   states as mentioned in helper_func, use the state variable to contain all that.
     def agent_action(self, state, points, dead):
         # print("IN AGENT_ACTION")
-        s_prime = self.helper_func(state)
-        action  = None
-        learning_rate = 0.7
+        s_prime = self.helper_func(state) # s'
+        action = None
+        learning_rate = 1
         reward = self.compute_reward(points=points, dead=dead)
         
-        if random.uniform(0,1) < self.epsilon:
-            action=random.choice(self.actions)
-        else:
-            action=np.argmax(self.Q[s_prime])
 
-        if self._train:
-            self.N[self.s][self.a] += 1    
-            max_next_state = np.max(self.Q[s_prime])
-            sample = reward + self.gamma * max_next_state - self.Q[self.s][self.a]
-            self.Q[self.s][self.a] += learning_rate * sample
+        def utility(state_indices):
+            n_values = self.N[state_indices]
+            q_values = self.Q[state_indices]
+            if random.uniform(0,1) < self.epsilon:
+                return random.choice(self.actions)
+            else:
+                ucb_values = [
+                    q_values[a] + np.sqrt(2 * np.log(np.sum(n_values) + 1) / (n_values[a] + 1))
+                    for a in self.actions
+                ]
+                return np.argmax(ucb_values)
+        # # maxamize based on reward
+        # if random.uniform(0,1) < self.epsilon:
+        #     action = random.choice(self.actions)
+        # else:
+        #     action = np.argmax(self.Q[s_prime])
+
+        # Update Q-table
+        if self._train and self.s is not None:
+            self.N[self.s][self.a] += 1
+            max_next_state = max(self.Q[s_prime])
+            sample = reward + self.gamma * max_next_state 
+            # Q(s,a) = (1- alpha)*Q(s,a) + alpha * sample
+            self.Q[self.s][self.a] =  (1 - learning_rate) * self.Q[self.s][self.a] + learning_rate * sample
+
+            
+        action = utility(s_prime)
         # save last action
         self.s = s_prime
         self.a = action

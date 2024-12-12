@@ -57,9 +57,9 @@ class SnakeGame:
                     count+=1
                     state, points, dead = self.env.step(action)
                     action = self.agent.agent_action(state=state, points=points, dead=dead)
-                    self.env.step(action=action)
                 self.points_results.append(points)
                 self.env.reset()
+                
                 
     
         if game % self.args.NUM_TO_STAT == 0:
@@ -70,7 +70,7 @@ class SnakeGame:
                 "Min points so far:", min(self.points_results[-NUM_TO_STAT:]),")",
             )
             
-        # print("Training takes", time.time() - start, "seconds")
+        print("Training takes", time.time() - start, "seconds")
         #   THIS LINE WILL SAVE THE MODEL TO THE FILE "model.npy"
         self.agent.save_model()
 
@@ -98,7 +98,6 @@ class SnakeGame:
                 count+=1
                 state, points, dead = self.env.step(action)
                 action = self.agent.agent_action(state=state, points=points, dead=dead)
-                self.env.step(action=action)
             points_results.append(points)
             self.env.reset()
             
