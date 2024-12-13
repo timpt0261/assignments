@@ -57,6 +57,8 @@ class SnakeGame:
                     count+=1
                     state, points, dead = self.env.step(action)
                     action = self.agent.agent_action(state=state, points=points, dead=dead)
+                    # uopdate when it dies
+                self.agent.agent_action(state=state, points=points, dead=dead)
                 self.points_results.append(points)
                 self.env.reset()
                 
