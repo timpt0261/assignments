@@ -27,7 +27,7 @@ class SnakeAgent:
         self.a = None
         self.points = 0
         self.epsilon = .1
-        self.alpha = .1
+        self.alpha = .7
 
         # Create the Q and N Table to work with
         self.Q = helper.initialize_q_as_zeros()
@@ -83,17 +83,17 @@ class SnakeAgent:
         ADJ_BODY_RIGHT = 7
         
         # Adjoining_Wall_X
-        if snake_head_x-helper.GRID_SIZE == helper.BOARD_LIMIT_MIN:  # Near left wall
+        if snake_head_x-helper.GRID_SIZE >= helper.BOARD_LIMIT_MIN:  # Near left wall
             idx[ADJ_WALL_X] = 0
-        elif snake_head_x + (2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near right wall
+        elif snake_head_x +  helper.GRID_SIZE <= helper.BOARD_LIMIT_MAX:  # Near right wall
             idx[ADJ_WALL_X] = 1
         else:  # Neither
             idx[ADJ_WALL_X] = 2
 
         # Adjoining_Wall_Y
-        if snake_head_y-helper.GRID_SIZE == helper.BOARD_LIMIT_MIN:  # Near top wall
+        if snake_head_y-helper.GRID_SIZE >= helper.BOARD_LIMIT_MIN:  # Near top wall
             idx[ADJ_WALL_Y] = 0
-        elif snake_head_y + (2 * helper.GRID_SIZE) == helper.BOARD_LIMIT_MAX:  # Near bottom wall
+        elif snake_head_y + helper.GRID_SIZE <= helper.BOARD_LIMIT_MAX:  # Near bottom wall
             idx[ADJ_WALL_Y] = 1
         else:  # Neither
             idx[ADJ_WALL_Y] = 2
@@ -153,7 +153,7 @@ class SnakeAgent:
     def agent_action(self, state, points, dead):
         # print("IN AGENT_ACTION")
         s_prime = self.helper_func(state) # s'
-        learning_rate = 0.1
+        lr = 0.1
 
         def utility(state_indices):
             if random.uniform(0,1) < self.epsilon:
@@ -162,16 +162,17 @@ class SnakeAgent:
         
         # Update Q-table after you die
         if self._train and self.s is not None:
-            reward = self.compute_reward(points=points, dead=dead)
+            reward = self.compute_reward(points=points, dead=dead) * self.Ne
             self.points = points
             self.N[self.s][self.a] += 1
-            max_next_state = max(self.Q[s_prime])
+            # lr = 1.0 / (1.0 + self.N[self.s][self.a] / self.LPC)
+            max_next_state = np.max(self.Q[s_prime])
             sample = reward + self.gamma * max_next_state 
             # Q(s,a) = (1- alpha)*Q(s,a) + alpha * sample
-            self.Q[self.s][self.a] = (1-self.alpha) * self.Q[self.s][self.a] + self.alpha * sample
+            self.Q[self.s][self.a] += lr * (sample - self.Q[self.s][self.a])
 
         if self._train:
-            self.epsilon = max(0.01, self.epsilon * .99)   
+            self.epsilon = max(0.000001, self.epsilon * .9)   
         # save last action
         action = utility(s_prime)
         self.s = s_prime
